@@ -1,23 +1,10 @@
 const { CreateTableCommand } = require('@aws-sdk/client-dynamodb');
-const { db, dynamoClient } = require('./db/db.js');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
+const { Service, Entity } = require('electrodb');
 
 async function main() {
-  try {
-    await dynamoClient.send(
-      new CreateTableCommand({
-        TableName: 'single-table',
-        BillingMode: 'PAY_PER_REQUEST',
-        AttributeDefinitions: [
-          { AttributeName: 'pk', AttributeType: 'S' },
-          { AttributeName: 'sk', AttributeType: 'S' },
-        ],
-        KeySchema: [
-          { AttributeName: 'pk', KeyType: 'HASH' },
-          { AttributeName: 'sk', KeyType: 'RANGE' },
-        ],
-      }),
-    );
-  } catch {}
+  await createDynamoTable();
 
   await db.entities.User.put({ id: '1' }).go();
 
@@ -40,4 +27,54 @@ async function main() {
   );
 }
 
-main();
+const User = new Entity({
+  model: {
+    entity: 'user',
+    version: '1',
+    service: 'app',
+  },
+  attributes: {
+    id: { type: 'string', required: true, readOnly: true },
+    name: { type: 'string' },
+  },
+  indexes: {
+    byId: {
+      pk: { field: 'pk', composite: ['id'] },
+      sk: { field: 'sk', composite: [] },
+    },
+  },
+});
+
+const dynamoClient = new DynamoDBClient({
+  region: 'us-east-1',
+  endpoint: 'http://dynamodb-local:8000',
+  credentials: {
+    accessKeyId: 'DUMMYIDEXAMPLE',
+    secretAccessKey: 'DUMMYEXAMPLEKEY',
+  },
+});
+
+const dynamoDocumentClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const db = new Service({ User }, { table: 'single-table', client: dynamoDocumentClient });
+
+async function createDynamoTable() {
+  try {
+    await dynamoClient.send(
+      new CreateTableCommand({
+        TableName: 'single-table',
+        BillingMode: 'PAY_PER_REQUEST',
+        AttributeDefinitions: [
+          { AttributeName: 'pk', AttributeType: 'S' },
+          { AttributeName: 'sk', AttributeType: 'S' },
+        ],
+        KeySchema: [
+          { AttributeName: 'pk', KeyType: 'HASH' },
+          { AttributeName: 'sk', KeyType: 'RANGE' },
+        ],
+      }),
+    );
+  } catch {}
+}
+
+main().catch(console.error);
