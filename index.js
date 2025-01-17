@@ -18,9 +18,22 @@ async function main() {
 
   const getWithoutAttributes = await db.entities.User.get({ id: '1' }).go();
 
+  const batchGetWithAttributes = await db.entities.User.get([{ id: '1' }]).go({
+    attributes: ['name'],
+  });
+
+  const batchgetWithoutAttributes = await db.entities.User.get([{ id: '1' }]).go();
+
   console.log(
     JSON.stringify(
-      { queryWithAttributes, queryWithoutAttributes, getWithAttributes, getWithoutAttributes },
+      {
+        queryWithAttributes,
+        queryWithoutAttributes,
+        getWithAttributes,
+        getWithoutAttributes,
+        batchGetWithAttributes,
+        batchGetWithoutAttributes,
+      },
       null,
       2,
     ),
