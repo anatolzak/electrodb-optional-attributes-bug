@@ -22,7 +22,7 @@ async function main() {
     attributes: ['name'],
   });
 
-  const batchgetWithoutAttributes = await db.entities.User.get([{ id: '1' }]).go();
+  const batchGetWithoutAttributes = await db.entities.User.get([{ id: '1' }]).go();
 
   console.log(
     JSON.stringify(
